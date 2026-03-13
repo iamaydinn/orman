@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönetici Paneli - Ormanın Kaderi</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eceff1; padding: 20px; color: #333; }
+        .admin-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { border-bottom: 2px solid #2196F3; padding-bottom: 10px; color: #1976D2; }
+        .section { margin-bottom: 30px; padding: 25px; background: #f8f9fa; border-radius: 12px; border: 1px solid #e0e0e0; }
+        select { width: 100%; padding: 15px; margin-top: 10px; font-size: 1.1rem; border-radius: 8px; border: 2px solid #ccc; outline: none; }
+        select:focus { border-color: #2196F3; }
+        .btn-senaryo { width: 100%; padding: 15px; margin-top: 15px; background: #E53935; color: white; border: none; font-size: 1.1rem; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .btn-senaryo:hover { background: #C62828; transform: translateY(-2px); }
+        .score-control { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #ccc; }
+        .score-control.yesil { border-color: #4CAF50; }
+        .score-control.demir { border-color: #E53935; }
+        .score-control.kok { border-color: #FF9800; }
+        .btn-score { width: 50px; padding: 10px; background: #4CAF50; color: white; border: none; margin: 0 5px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .btn-score.minus { background: #FF9800; }
+        .btn-score:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+
+    <div class="admin-container">
+        <h1><i class="fa-solid fa-gamepad"></i> Oyun Kurucu Paneli</h1>
+
+        <div class="section">
+            <h3><i class="fa-solid fa-bolt" style="color:#FFC107;"></i> 1. Senaryo Yönetimi ve Sohbet Temizliği</h3>
+            <p>Yeni bir senaryo seçip gönderdiğinizde, tüm öğrenci ekranlarındaki soru değişir ve <b>eski sohbet geçmişi tamamen silinir.</b></p>
+            <select id="senaryoSecici">
+                <option value="Senaryo 1 (Kağıt Fabrikası): Ormanın içinden geçen nehrin kenarına, 500 kişiye istihdam sağlayacak bir kağıt fabrikası kurulması planlanıyor. Kararınız nedir?">1. Kağıt Fabrikası Krizi</option>
+                <option value="Senaryo 2 (Milli Park): Bölgedeki 1000 hektarlık alanın insan girişine tamamen kapatılarak Milli Park yapılması önerildi. Tutumunuz ne olur?">2. Milli Park İlanı</option>
+                <option value="Senaryo 3 (Odun Kotası): Kış yaklaşıyor. Orman müdürlüğü, yerel halkın ormandan topladığı ölü odun miktarına %50 kota getirdi. Ne tepki verirsiniz?">3. Yakacak Odun Kotası</option>
+                <option value="Senaryo 4 (Maden): Yabancı bir şirket, ormanın altında altın rezervi buldu ve arama yapmak için lisans istiyor. Devlet ciddi vergi geliri alacak. Yanıtınız nedir?">4. Yabancı Maden Ruhsatı</option>
+                <option value="Senaryo 5 (Tarım Alanı): Gıda fiyatları artıyor. Çiftçiler, ormanın sınırındaki çalılık alanları yakarak tarım arazisine çevirmek istiyor. Çözüm öneriniz nedir?">5. Tarım Alanı Genişletmesi</option>
+            </select>
+            <button id="btnSenaryoGonder" class="btn-senaryo"><i class="fa-solid fa-paper-plane"></i> Yeni Senaryoyu Gönder & Ekranları Temizle</button>
+        </div>
+
+        <div class="section">
+            <h3><i class="fa-solid fa-star" style="color:#2196F3;"></i> 2. Canlı Puanlama Sistemi</h3>
+            <p>Öğrenciler argümanlarını sundukça onlara anlık puan verebilirsiniz. Tablo anında güncellenir.</p>
+            
+            <div class="score-control yesil">
+                <strong style="font-size: 1.2rem;"><i class="fa-solid fa-leaf" style="color:#4CAF50;"></i> Yeşil Kalkan (<span id="txt-yesil">0</span>)</strong>
+                <div>
+                    <button class="btn-score minus" onclick="puanGuncelle('yesil', -5)">-5</button>
+                    <button class="btn-score" onclick="puanGuncelle('yesil', 10)">+10</button>
+                </div>
+            </div>
+
+            <div class="score-control demir">
+                <strong style="font-size: 1.2rem;"><i class="fa-solid fa-industry" style="color:#E53935;"></i> Demir Çark (<span id="txt-demir">0</span>)</strong>
+                <div>
+                    <button class="btn-score minus" onclick="puanGuncelle('demir', -5)">-5</button>
+                    <button class="btn-score" onclick="puanGuncelle('demir', 10)">+10</button>
+                </div>
+            </div>
+
+            <div class="score-control kok">
+                <strong style="font-size: 1.2rem;"><i class="fa-solid fa-tree-city" style="color:#FF9800;"></i> Köklerin Sesi (<span id="txt-kok">0</span>)</strong>
+                <div>
+                    <button class="btn-score minus" onclick="puanGuncelle('kok', -5)">-5</button>
+                    <button class="btn-score" onclick="puanGuncelle('kok', 10)">+10</button>
+                </div>
+            </div>
+            
+            <button onclick="puanlariSifirla()" style="margin-top:15px; padding:10px; background:#757575; color:white; border:none; border-radius:5px; cursor:pointer;">Tüm Puanları Sıfırla</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7FNkbe9C_QeX7T7Cip4DW6fUaPgZQ15A",
+            authDomain: "etkinlik-ab326.firebaseapp.com",
+            projectId: "etkinlik-ab326",
+            storageBucket: "etkinlik-ab326.firebasestorage.app",
+            messagingSenderId: "252006040597",
+            appId: "1:252006040597:web:b5edcab70eb46a78127a1c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Canlı Puanları Oku
+        onValue(ref(db, 'puanlar'), (snapshot) => {
+            const puanlar = snapshot.val() || { yesil: 0, demir: 0, kok: 0 };
+            document.getElementById('txt-yesil').innerText = puanlar.yesil;
+            document.getElementById('txt-demir').innerText = puanlar.demir;
+            document.getElementById('txt-kok').innerText = puanlar.kok;
+        });
+
+        // Puan Güncelleme
+        window.puanGuncelle = async function(takim, miktar) {
+            const puanRef = ref(db, `puanlar/${takim}`);
+            const snapshot = await get(puanRef);
+            let mevcutPuan = snapshot.exists() ? snapshot.val() : 0;
+            set(puanRef, mevcutPuan + miktar);
+        };
+
+        // Puanları Sıfırlama
+        window.puanlariSifirla = async function() {
+            if(confirm("Tüm takımların puanları 0 olacak. Emin misiniz?")) {
+                await set(ref(db, 'puanlar'), { yesil: 0, demir: 0, kok: 0 });
+            }
+        };
+
+        // Yeni Senaryo Gönder ve Sohbeti Temizle
+        document.getElementById('btnSenaryoGonder').addEventListener('click', async () => {
+            const secilenSoru = document.getElementById('senaryoSecici').value;
+            
+            if(confirm("Eski sohbet silinecek ve yeni senaryo herkesin ekranına düşecek. Onaylıyor musunuz?")) {
+                await set(ref(db, 'oyun_durumu/aktif_senaryo'), secilenSoru);
+                await remove(ref(db, 'mesajlar'));
+                alert("Başarılı! Öğrenci ekranları yeni senaryo ile güncellendi.");
+            }
+        });
+    </script>
+</body>
+</html>
