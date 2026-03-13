@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ormanın Kaderi - Simülasyon</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+
+        :root {
+            --team1: #4CAF50;
+            --team2: #E53935;
+            --team3: #FF9800;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-x: hidden;
+            /* Canlı ve Hareketli Arka Plan */
+            background: linear-gradient(-45deg, #1e3c72, #2a5298, #0f2027, #203a43);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Uçuşan Partiküller (Ateşböceği Efekti) */
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: floatUp infinite linear;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 1; /* Partiküllerin üstünde durması için */
+            position: relative;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Popup Bildirimi */
+        .popup {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: #4CAF50; color: white; padding: 15px 30px; border-radius: 50px;
+            font-size: 1.1rem; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: top 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); z-index: 2000;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .popup.show { top: 30px; }
+
+        /* Ortak Cam Tasarımı (Glassmorphism) */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+        }
+
+        /* 1. Giriş Ekranı */
+        .login-box { padding: 50px; max-width: 400px; margin: 0 auto; text-align: center; }
+        .login-box input { width: 100%; padding: 15px; margin-bottom: 20px; border: none; border-radius: 10px; font-size: 1.1rem; box-sizing: border-box; font-family: 'Poppins', sans-serif; background: rgba(255,255,255,0.9); }
+        .btn-main { width: 100%; padding: 15px; background: #4CAF50; color: white; border: none; border-radius: 10px; font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .btn-main:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(76, 175, 80, 0.5); }
+
+        /* 2. Takım Seçim Ekranı */
+        .teams-wrapper { display: flex; justify-content: center; flex-wrap: wrap; gap: 30px; margin-top: 40px; }
+        .team-card {
+            background: rgba(255, 255, 255, 0.95); color: #333; border-radius: 20px;
+            padding: 40px 20px; width: 300px; text-align: center; cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;
+        }
+        .team-card:hover { transform: translateY(-15px) scale(1.05); }
+        .team-1:hover { box-shadow: 0 15px 40px rgba(76, 175, 80, 0.6); }
+        .team-2:hover { box-shadow: 0 15px 40px rgba(229, 57, 53, 0.6); }
+        .team-3:hover { box-shadow: 0 15px 40px rgba(255, 152, 0, 0.6); }
+        
+        .team-icon { font-size: 4rem; margin-bottom: 15px; display: block; }
+        .team-1 .team-icon { color: var(--team1); }
+        .team-2 .team-icon { color: var(--team2); }
+        .team-3 .team-icon { color: var(--team3); }
+
+        @keyframes pulseGlow { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px var(--team1)); } 50% { transform: scale(1.1); filter: drop-shadow(0 0 20px var(--team1)); } }
+        @keyframes spinGear { 100% { transform: rotate(360deg); } }
+        @keyframes swayTree { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(10deg); } 75% { transform: rotate(-10deg); } }
+        
+        .team-1:hover .team-icon { animation: pulseGlow 2s infinite; }
+        .team-2:hover .team-icon { animation: spinGear 4s linear infinite; }
+        .team-3:hover .team-icon { animation: swayTree 2s ease-in-out infinite; }
+
+        /* --- 3. Lobi Ekranı --- */
+        .lobby-grid { display: grid; grid-template-columns: 250px 1fr 350px; gap: 20px; height: 90vh; }
+        .panel { padding: 25px; display: flex; flex-direction: column; max-height: 100%; }
+        
+        .leaderboard h3 { margin-top: 0; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        .team-score { display: flex; justify-content: space-between; align-items: center; padding: 15px; margin-bottom: 12px; border-radius: 12px; background: rgba(0,0,0,0.3); font-weight: 600; font-size: 1.1rem; transition: all 0.3s; }
+        
+        .scenario-area { text-align: center; justify-content: center; border: 2px solid rgba(255,215,0,0.3); overflow-y: auto; }
+        .scenario-area i { font-size: 4rem; color: #FFD700; margin-bottom: 20px; animation: pulseGlow 2s infinite; }
+        #questionText { font-size: 1.6rem; line-height: 1.6; font-weight: 600; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+
+        /* Mesaj Alanının Uzamasını Engelleyen Kusursuz Yapı */
+        .chat-area { display: flex; flex-direction: column; overflow: hidden; }
+        .chat-messages { 
+            flex: 1 1 auto; 
+            overflow-y: auto; /* Sadece mesaj kutusu kaydırılabilir olur */
+            background: rgba(0,0,0,0.2); 
+            border-radius: 10px; 
+            padding: 15px; 
+            margin-bottom: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+            min-height: 0; /* Flexbox'ta sonsuz büyümeyi engeller */
+        }
+
+        /* Özel Kaydırma Çubuğu (Scrollbar) Tasarımı */
+        .chat-messages::-webkit-scrollbar { width: 8px; }
+        .chat-messages::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.3); border-radius: 10px; }
+        .chat-messages::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.5); }
+
+        .message { background: rgba(255,255,255,0.95); color: #333; padding: 12px 18px; border-radius: 15px; font-size: 0.95rem; width: fit-content; max-width: 85%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .message.me { background: #DCF8C6; align-self: flex-end; border-bottom-right-radius: 0; }
+        .message.other { align-self: flex-start; border-bottom-left-radius: 0; }
+        .message-sender { font-size: 0.8rem; font-weight: 800; margin-bottom: 5px; display: block; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 3px; }
+        
+        .chat-input { display: flex; gap: 10px; flex-shrink: 0; } /* Giriş kutusunun ezilmesini engeller */
+        .chat-input textarea { flex-grow: 1; padding: 15px; border-radius: 12px; border: none; resize: none; font-family: 'Poppins', sans-serif; outline: none; font-size: 1rem; }
+        .btn-send { background: #2196F3; color: white; border: none; border-radius: 12px; width: 65px; cursor: pointer; font-size: 1.4rem; transition: all 0.2s; }
+        .btn-send:hover { background: #1976D2; transform: scale(1.05); }
+
+        /* Mobil Cihazlar İçin Kusursuz Sabitleme */
+        @media (max-width: 900px) {
+            body { align-items: flex-start; } /* Mobilde ekranı en üste yaslar */
+            .lobby-grid { grid-template-columns: 1fr; height: auto; gap: 15px; }
+            .scenario-area { order: -1; padding: 20px; } /* Mobilde soruyu en üste alırız */
+            .chat-area { height: 400px; /* Mobilde mesaj kutusuna sabit bir boy veririz */ }
+            .leaderboard { height: auto; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="particles" id="particles"></div>
+
+    <div id="popup" class="popup"><i class="fa-solid fa-circle-check"></i> <span id="popupText">İşlem Başarılı!</span></div>
+
+    <div id="loginSection" class="container">
+        <div class="login-box glass-panel">
+            <h1 style="margin-top:0;">Simülasyona Giriş</h1>
+            <input type="text" id="adInput" placeholder="Adınız" autocomplete="off">
+            <input type="text" id="soyadInput" placeholder="Soyadınız" autocomplete="off">
+            <button id="btnGiris" class="btn-main">Devam Et <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <div id="teamSection" class="container hidden" style="text-align: center;">
+        <h1 style="font-size: 3.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-bottom: 10px;">Tarafını Seç</h1>
+        <p style="font-size: 1.3rem; margin-bottom: 40px;">Ormanın kaderini belirleyecek olan gruba katıl.</p>
+        <div class="teams-wrapper">
+            <div class="team-card team-1" data-team="Yeşil Kalkan">
+                <i class="fa-solid fa-leaf team-icon"></i>
+                <h2 style="color:var(--team1);">Yeşil Kalkan</h2>
+                <p>Doğayı ve geleceği koru. Bilimin ışığında sürdürülebilirliği savun.</p>
+            </div>
+            <div class="team-card team-2" data-team="Demir Çark">
+                <i class="fa-solid fa-industry team-icon"></i>
+                <h2 style="color:var(--team2);">Demir Çark</h2>
+                <p>Üretim ve kalkınma şart. Ekonomik gücü ve endüstriyi temsil et.</p>
+            </div>
+            <div class="team-card team-3" data-team="Köklerin Sesi">
+                <i class="fa-solid fa-tree-city team-icon"></i>
+                <h2 style="color:var(--team3);">Köklerin Sesi</h2>
+                <p>Yerel halkın haklarını koru. Orman bizim evimiz ve geçim kaynağımız.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="lobbySection" class="container hidden">
+        <div class="lobby-grid">
+            
+            <div class="panel glass-panel leaderboard">
+                <h3><i class="fa-solid fa-trophy" style="color:#FFD700;"></i> Canlı Puanlar</h3>
+                <div class="team-score" id="box-yesil">
+                    <span><i class="fa-solid fa-leaf" style="color:var(--team1);"></i> Yeşil Kalkan</span>
+                    <span id="score-yesil">0 Puan</span>
+                </div>
+                <div class="team-score" id="box-demir">
+                    <span><i class="fa-solid fa-industry" style="color:var(--team2);"></i> Demir Çark</span>
+                    <span id="score-demir">0 Puan</span>
+                </div>
+                <div class="team-score" id="box-kok">
+                    <span><i class="fa-solid fa-tree-city" style="color:var(--team3);"></i> Köklerin Sesi</span>
+                    <span id="score-kok">0 Puan</span>
+                </div>
+            </div>
+
+            <div class="panel glass-panel scenario-area">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <h2 style="margin:0 0 15px 0; color:#FFD700;">Aktif Kriz Senaryosu</h2>
+                <p id="questionText">Sistem yeni senaryoyu yüklüyor, lütfen bekleyin...</p>
+            </div>
+
+            <div class="panel glass-panel chat-area">
+                <h3 style="margin-top:0; border-bottom: 2px solid rgba(255,255,255,0.2); padding-bottom: 10px;">
+                    <i class="fa-solid fa-comments"></i> Tartışma Alanı
+                </h3>
+                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-input">
+                    <textarea id="messageInput" rows="2" placeholder="Rolünüze uygun cevabı yazın..."></textarea>
+                    <button id="btnSend" class="btn-send"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getDatabase, ref, push, onChildAdded, onValue } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD7FNkbe9C_QeX7T7Cip4DW6fUaPgZQ15A",
+            authDomain: "etkinlik-ab326.firebaseapp.com",
+            projectId: "etkinlik-ab326",
+            storageBucket: "etkinlik-ab326.firebasestorage.app",
+            messagingSenderId: "252006040597",
+            appId: "1:252006040597:web:b5edcab70eb46a78127a1c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Arka plan partikül oluşturucu
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for(let i=0; i<30; i++) {
+                let div = document.createElement('div');
+                div.className = 'particle';
+                let size = Math.random() * 5 + 2;
+                div.style.width = size + 'px'; div.style.height = size + 'px';
+                div.style.left = Math.random() * 100 + 'vw';
+                div.style.animationDuration = (Math.random() * 10 + 5) + 's';
+                div.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(div);
+            }
+        }
+        createParticles();
+
+        let user = { ad: "", soyad: "", takim: "" };
+        const secLogin = document.getElementById('loginSection');
+        const secTeam = document.getElementById('teamSection');
+        const secLobby = document.getElementById('lobbySection');
+        const popup = document.getElementById('popup');
+        const popupText = document.getElementById('popupText');
+
+        function showPopup(mesaj, renk = "#4CAF50") {
+            popupText.innerText = mesaj;
+            popup.style.background = renk;
+            popup.classList.add('show');
+            setTimeout(() => popup.classList.remove('show'), 3000);
+        }
+
+        document.getElementById('btnGiris').addEventListener('click', () => {
+            const ad = document.getElementById('adInput').value.trim();
+            const soyad = document.getElementById('soyadInput').value.trim();
+            if(!ad || !soyad) return showPopup("Lütfen ad ve soyad girin!", "#E53935");
+            
+            user.ad = ad; user.soyad = soyad;
+            secLogin.classList.add('hidden');
+            secTeam.classList.remove('hidden');
+        });
+
+        document.querySelectorAll('.team-card').forEach(card => {
+            card.addEventListener('click', async () => {
+                user.takim = card.getAttribute('data-team');
+                try {
+                    await push(ref(db, 'oyuncular'), { ad: user.ad, soyad: user.soyad, takim: user.takim });
+                    showPopup(`Takıma Katıldın: ${user.takim}`);
+                    setTimeout(() => {
+                        secTeam.classList.add('hidden');
+                        secLobby.classList.remove('hidden');
+                        baslatLobi();
+                    }, 1500);
+                } catch (error) { showPopup("Bağlantı hatası!", "#E53935"); }
+            });
+        });
+
+        function baslatLobi() {
+            // 1. Admin'den Gelen Senaryoyu Dinle
+            onValue(ref(db, 'oyun_durumu/aktif_senaryo'), (snapshot) => {
+                const soru = snapshot.val();
+                document.getElementById('questionText').innerText = soru || "Adminin yeni senaryoyu başlatması bekleniyor...";
+                
+                // Soru değiştiğinde senaryo kutusunda ufak bir parlama efekti yap
+                const scenarioArea = document.querySelector('.scenario-area');
+                scenarioArea.style.boxShadow = "0 0 30px rgba(255,215,0,0.8)";
+                setTimeout(() => scenarioArea.style.boxShadow = "none", 1000);
+            });
+
+            // 2. Sohbet Temizleme Emrini Dinle
+            onValue(ref(db, 'mesajlar'), (snapshot) => {
+                if (!snapshot.exists()) document.getElementById('chatMessages').innerHTML = ""; 
+            });
+
+            // 3. Mesajları Dinle
+            onChildAdded(ref(db, 'mesajlar'), (snapshot) => {
+                const veri = snapshot.val();
+                ekranaMesajYazdir(veri);
+            });
+
+            // 4. Liderlik Tablosu Puanlarını Dinle
+            onValue(ref(db, 'puanlar'), (snapshot) => {
+                const p = snapshot.val() || { yesil: 0, demir: 0, kok: 0 };
+                document.getElementById('score-yesil').innerText = p.yesil + " Puan";
+                document.getElementById('score-demir').innerText = p.demir + " Puan";
+                document.getElementById('score-kok').innerText = p.kok + " Puan";
+            });
+        }
+
+        const btnSend = document.getElementById('btnSend');
+        const messageInput = document.getElementById('messageInput');
+
+        btnSend.addEventListener('click', mesajGonder);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mesajGonder(); }
+        });
+
+        async function mesajGonder() {
+            const metin = messageInput.value.trim();
+            if (!metin) return;
+            btnSend.disabled = true;
+            try {
+                await push(ref(db, 'mesajlar'), { ad: user.ad, takim: user.takim, metin: metin, zaman: Date.now() });
+                messageInput.value = "";
+                showPopup("Cevabınız başarıyla iletildi!");
+            } catch (error) { showPopup("Hata oluştu!", "#E53935"); } 
+            finally { btnSend.disabled = false; messageInput.focus(); }
+        }
+
+        function ekranaMesajYazdir(veri) {
+            const chatBox = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            const isMe = (veri.ad === user.ad && veri.takim === user.takim);
+            div.className = `message ${isMe ? 'me' : 'other'}`;
+            
+            let tColor = "#333";
+            if(veri.takim === "Yeşil Kalkan") tColor = "#2E7D32";
+            if(veri.takim === "Demir Çark") tColor = "#C62828";
+            if(veri.takim === "Köklerin Sesi") tColor = "#EF6C00";
+
+            div.innerHTML = `<span class="message-sender" style="color:${tColor};">${veri.ad} (${veri.takim})</span>${veri.metin}`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
