@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Millî Meseleler – 3D Açık Dünya</title>
+<style>
+:root{color-scheme:dark;--bg:#0f172a}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:#fff;font-family:system-ui,'Segoe UI',sans-serif;user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{position:fixed;inset:0}
+.g{background:rgba(15,23,42,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid #ffffff26;border-radius:14px;padding:8px 12px;position:fixed}
+#hud{top:calc(8px + env(safe-area-inset-top,0px));left:8px;font-size:13px;line-height:1.55;max-width:250px}
+#hud b{font-size:15px}
+#st{top:calc(8px + env(safe-area-inset-top,0px));right:8px;text-align:right;font-size:13px}
+#mm{display:block;margin-top:6px;border-radius:50%;background:#0b1220cc}
+#t{top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);max-width:70%;text-align:center;font-size:14px;opacity:0;transition:.4s;pointer-events:none}
+#act{position:fixed;bottom:calc(120px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);display:none}
+.b{display:inline-block;margin:6px 4px 0 0;padding:13px 22px;border:0;border-radius:99px;color:#fff;font:800 16px system-ui;background:linear-gradient(90deg,#dc2626,#991b1b);box-shadow:0 0 22px #dc262699;cursor:pointer}
+.b.s{background:#64748b;box-shadow:none}
+#joy{position:fixed;left:20px;bottom:calc(60px + env(safe-area-inset-bottom,0px));width:150px;height:150px}
+#sig{right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:11px;text-align:right;border-bottom:3px solid #dc2626;pointer-events:none}
+#m,#intro{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(2,6,23,.8);z-index:9}
+#intro{display:flex;background:linear-gradient(#0f172aee,#7f1d1dcc)}
+.card{background:#f8fafc;color:#0f172a;max-width:560px;width:92%;border-radius:20px;padding:20px 22px;max-height:90vh;overflow:auto;touch-action:pan-y;box-sizing:border-box}
+.card .h{font:800 20px system-ui;color:#b91c1c;margin-bottom:6px}.q{font-size:17px;line-height:1.5;font-weight:600}
+.o{display:block;width:100%;text-align:left;margin:8px 0;padding:13px 16px;border-radius:12px;border:2px solid #cbd5e1;background:#fff;color:#0f172a;font:600 15px system-ui;cursor:pointer}
+.o:hover{background:#e2e8f0}.o.ok{background:#bbf7d0;border-color:#16a34a}.o.no{background:#fecaca;border-color:#dc2626}
+.ex{background:#f1f5f9;padding:10px 12px;border-radius:10px;font-size:14px}
+</style></head><body>
+<div id="hud" class="g"><b>🏕️ Millî Mücadele Karargâhı</b><div id="ql"></div><div id="nx" style="color:#fde047;margin-top:4px"></div></div>
+<div id="st" class="g"><div id="sc"></div><canvas id="mm" width="120" height="120"></canvas></div>
+<div id="t" class="g"></div>
+<button id="act" class="b" onclick="act()"></button>
+<div id="joy"></div>
+<div id="sig" class="g"><b>Hazırlayan: Muhammet Emin Aydın</b><br>Atatürk Üniversitesi Sosyal Bilgiler Öğretmenliği</div>
+<div id="m"><div class="card" id="c"></div></div>
+<div id="intro"><div class="card" style="text-align:center">
+<div style="font-size:48px">🇹🇷</div><div class="h" style="font-size:26px">Millî Meseleler: Karargâh Macerası</div>
+<p style="line-height:1.55">Yıl 1919. Genç bir gönüllü olarak Anadolu’ya geldin. Altın ışık hüzmelerini takip ederek <b>6 tarihî durağı</b> gez, görevlerdeki soruları çöz, kayıp <b>belgeleri</b> topla ve karargâhını adım adım inşa et!</p>
+<p style="font-size:13px;color:#475569;text-align:left">🖥️ <b>W A S D</b> yürü · <b>Shift</b> koş · <b>←/→</b> dön · fareyle sürükle: etrafa bak · <b>E</b>: etkileşim<br>📱 Sol joystick ile yürü, ekranı kaydırarak etrafa bak.</p>
+<button class="b" id="go">▶ Maceraya Başla</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+<script>
+const T=THREE,$=i=>document.getElementById(i),rnd=Math.random;
+// ---------- İÇERİK ----------  (her soruda ilk şık doğru; oyun karıştırır)
+const P=[
+{n:"Samsun",w:"Mustafa Kemal Paşa",d:"19 Mayıs 1919",u:"Türk Bayrağı",t:"deniz",i:"Bandırma Vapuru’ndan indik. 9. Ordu Müfettişi olarak Samsun’dayız; Millî Mücadele’nin ilk kıvılcımı burada çakılıyor.",q:[
+["Mustafa Kemal Paşa Samsun’a hangi tarihte çıkmıştır?","19 Mayıs 1919","15 Mayıs 1919","23 Nisan 1920","9 Eylül 1922","Bu tarih Millî Mücadele’nin başlangıcı kabul edilir."],
+["Mustafa Kemal Paşa’nın Samsun’a gönderilmesindeki resmî görev nedir?","Karadeniz’de asayişi sağlamak ve silahların toplanmasını denetlemek","Sevr Antlaşması’nı imzalamak","TBMM’yi Ankara’da açmak","Sakarya’da orduya komuta etmek","Resmî görev buydu; asıl amacı ise millî direnişi örgütlemekti."]]},
+{n:"Amasya",w:"Mustafa Kemal Paşa",d:"22 Haziran 1919",u:"Telgraf Direği",t:"amasya",i:"Burada kalıp Anadolu’ya telgraf çekiyoruz. Millete gerçeği duyurma zamanı!",q:[
+["“Vatanın bütünlüğü, milletin istiklâli tehlikededir.” cümlesi hangi belgede yer alır?","Amasya Genelgesi","Erzurum Kongresi Kararları","Misak-ı Millî","Sivas Kongresi Bildirisi","Millî Mücadele’nin gerekçesi ve amacı ilk kez Amasya Genelgesi’nde açıklanmıştır."],
+["“Milletin istiklâlini yine milletin azim ve kararı kurtaracaktır.” sözü hangi anlayışı vurgular?","Millî egemenlik","Padişahın mutlak yetkisi","Manda ve himaye","Saltanatın devamı","Kurtuluş gücünün millette olduğu, yani millî egemenlik anlayışı vurgulanmıştır."]]},
+{n:"Erzurum",w:"Kâzım Karabekir Paşa",d:"23 Temmuz 1919",u:"Erzak ve Cephane",t:"erzurum",i:"Çifte Minareli Medrese’nin önündeyiz. Doğu’nun temsilcileri kongre için toplandı, kararlar bekleniyor.",q:[
+["Erzurum Kongresi’nde alınan kararlardan biri hangisidir?","Manda ve himaye kabul edilemez.","Saltanat kaldırılmıştır.","Cumhuriyet ilan edilmiştir.","Lozan Antlaşması imzalanmıştır.","Erzurum Kongresi’nde manda ve himaye kesin olarak reddedilmiştir."],
+["Erzurum Kongresi hangi özelliği taşır?","Bölgesel kongredir; ancak millî nitelikte kararlar almıştır.","TBMM’nin ilk toplantısıdır.","Saltanatın kaldırıldığı kongredir.","Yalnızca askerlerin katıldığı bir toplantıdır.","Doğu illeri adına toplandı; ama “Millî sınırlar içinde vatan bir bütündür, parçalanamaz.” kararı millî niteliktedir."]]},
+{n:"Sivas",w:"Rauf Orbay",d:"4 Eylül 1919",u:"Temsil Heyeti Çadırı",t:"sivas",i:"Gök Medrese’de bütün yurttan gelen delegeler toplandı. Tek ses, tek yürek olma vakti!",q:[
+["Sivas Kongresi’nin önemli sonuçlarından biri hangisidir?","Cemiyetlerin “Anadolu ve Rumeli Müdafaa-i Hukuk Cemiyeti” adı altında birleştirilmesi","Misak-ı Millî’nin ilanı","Hilafetin kaldırılması","İstiklal Mahkemeleri’nin kurulması","Böylece direniş tek çatı altında toplandı ve Temsil Heyeti seçildi."],
+["Sivas Kongresi’ni Erzurum Kongresi’nden ayıran özellik nedir?","Tüm yurdu temsil eden millî bir kongre olmasıdır.","Bölgesel olmasıdır.","İstanbul’da toplanmasıdır.","Mustafa Kemal’in katılmamasıdır.","Sivas Kongresi tüm yurt adına toplanan millî bir kongredir."]]},
+{n:"Ankara",w:"Meclis Başkanı",d:"23 Nisan 1920",u:"Millî Egemenlik Anıtı",t:"meclis",i:"Birinci Meclis binasındayız. Millet iradesini temsil edecek meclis burada kuruldu!",q:[
+["Misak-ı Millî hangi mecliste kabul edilmiştir?","Osmanlı Mebusan Meclisi","TBMM","Divan-ı Harp","Sivas Kongresi","Misak-ı Millî, 28 Ocak 1920’de Osmanlı Mebusan Meclisi’nde kabul edilmiştir."],
+["TBMM hangi tarihte Ankara’da açılmıştır?","23 Nisan 1920","19 Mayıs 1919","29 Ekim 1923","30 Ağustos 1922","TBMM’nin açılışıyla millî egemenlik yeni devletin temeli olmuştur."]]},
+{n:"Sakarya",w:"Başkomutan",d:"Ağustos 1921",u:"Savunma Hattı ve Top",t:"sakarya",i:"Cephe hazır! Ordunun yiyecek, giyecek ve cephane ihtiyacı için halk seferber oldu. Hattı müdafaa yok, sath-ı müdafaa var!",q:[
+["Sakarya Meydan Muharebesi öncesinde ordunun ihtiyaçlarını halktan karşılamak için çıkarılan emirler hangisidir?","Tekâlif-i Millîye Emirleri","Hıyanet-i Vataniye Kanunu","Teşkilât-ı Esasiye Kanunu","İstiklal Mahkemeleri Kanunu","Ağustos 1921’de çıkarılan emirlerle halk yiyecek, giyecek ve cephane desteği verdi."],
+["Sakarya Zaferi’nden sonra Mustafa Kemal Paşa’ya TBMM tarafından hangi unvanlar verilmiştir?","Mareşal ve Gazi","Sadrazam ve Paşa","Halife ve Sultan","Müşir ve Vezir","Zaferin ardından TBMM, kendisine Mareşal rütbesi ve Gazi unvanını vermiştir."]]}];
+const F=["Kuvâ-yı Millîye: İşgallere karşı halkın kurduğu düzensiz, yerel direniş birlikleridir.","Müdafaa-i Hukuk Cemiyetleri, bölgesel direnişi örgütleyen halk cemiyetleridir.","Havza Genelgesi (28 Mayıs 1919): İşgalleri protesto için mitingler düzenlenmesini istedi.","Heyet-i Temsiliye, Sivas Kongresi’nde seçilen ve Millî Mücadele’yi yöneten kuruldur.","Misak-ı Millî: Millî sınırlarımızı belirleyen karardır.","Mondros Ateşkes Antlaşması 30 Ekim 1918’de imzalandı.","İzmir, 15 Mayıs 1919’da Yunanlılarca işgal edildi.","Anadolu kadınları cepheye cephane taşıyarak Millî Mücadele’ye büyük destek verdi.","Sevr Antlaşması Osmanlı’yı parçalıyordu; TBMM bu antlaşmayı tanımadı.","Büyük Taarruz sonrası Başkomutanlık Meydan Muharebesi 30 Ağustos 1922’de kazanıldı."];
+const RANK=["Genç Gönüllü","Mücahit","Onbaşı","Teğmen","Yüzbaşı","Albay","Mareşal"];
+P.forEach((p,i)=>{const a=-Math.PI/2+i*Math.PI/3+(i%2?.15:-.15),r=78+(i%2)*10;p.x=Math.cos(a)*r;p.z=Math.sin(a)*r});
+// ---------- ARAZİ ----------
+const sm=f=>f<=0?0:f>=1?1:f*f*(3-2*f);
+function hf(x,z){const d=Math.hypot(x,z),h=Math.sin(x*.045)*3+Math.cos(z*.05)*3.2+Math.sin((x+z)*.09)*1.5+Math.cos(x*.13-z*.11)*.7;let f=sm((d-13)/16);for(const p of P)f=Math.min(f,sm((Math.hypot(x-p.x,z-p.z)-11)/14));const m=Math.max(0,d-105);return h*f+m*.55+m*Math.abs(Math.sin(x*.07+z*.05))*1.5}
+function pd(x,z){let m=1e9;for(const p of P){const t=Math.max(0,Math.min(1,(x*p.x+z*p.z)/(p.x*p.x+p.z*p.z)));m=Math.min(m,Math.hypot(x-p.x*t,z-p.z*t))}return m}
+const R=new T.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(innerWidth,innerHeight);R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.toneMapping=T.ACESFilmicToneMapping;R.outputEncoding=T.sRGBEncoding;document.body.prepend(R.domElement);
+const scene=new T.Scene(),cam=new T.PerspectiveCamera(70,innerWidth/innerHeight,.1,500);cam.rotation.order='YXZ';
+scene.fog=new T.Fog(0xcfe3ee,70,300);
+{const G=new T.PlaneGeometry(400,400,150,150);G.rotateX(-Math.PI/2);const ps=G.attributes.position,col=new Float32Array(ps.count*3),c=new T.Color(),rock=new T.Color(.4,.38,.36),snow=new T.Color(.9,.93,1),dirt=new T.Color(.42,.31,.18);
+for(let i=0;i<ps.count;i++){const x=ps.getX(i),z=ps.getZ(i),y=hf(x,z),n=Math.sin(x*.21)*Math.cos(z*.17);ps.setY(i,y);c.setHSL(.26+.03*n,.5,.21+.05*n);c.lerp(rock,sm((y-5)/4));c.lerp(snow,sm((y-15)/4));c.lerp(dirt,.85*sm(1-(pd(x,z)-1.2)/1.4));col.set([c.r,c.g,c.b],i*3)}
+G.setAttribute('color',new T.BufferAttribute(col,3));G.computeVertexNormals();const m=new T.Mesh(G,new T.MeshStandardMaterial({vertexColors:true,roughness:1}));m.receiveShadow=true;scene.add(m)}
+const sky=new T.Mesh(new T.SphereGeometry(400,16,12),new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,vertexShader:'varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 p;void main(){vec3 n=normalize(p);float h=clamp(n.y,0.,1.);vec3 c=mix(vec3(.80,.89,.95),vec3(.16,.42,.80),pow(h,.55));c+=vec3(1.,.9,.6)*pow(max(dot(n,normalize(vec3(.5,.7,.35))),0.),600.)*2.;gl_FragColor=vec4(c,1.);}'}));scene.add(sky);
+scene.add(new T.HemisphereLight(0xcfe6ff,0x4a5a30,.75));
+const sun=new T.DirectionalLight(0xfff0d0,1.25);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-45,right:45,top:45,bottom:-45,far:300});scene.add(sun,sun.target);
+// ---------- ORMAN, KAYA, BULUT ----------
+const D=new T.Object3D(),tr=[];
+while(tr.length<380){const x=(rnd()-.5)*280,z=(rnd()-.5)*280,d=Math.hypot(x,z);if(d<16||d>118||pd(x,z)<3.5||P.some(p=>Math.hypot(x-p.x,z-p.z)<13))continue;const y=hf(x,z);if(y>9)continue;tr.push([x,y,z,.8+rnd()*1.1])}
+function forest(g,dy,h,s){const m=new T.InstancedMesh(g,new T.MeshStandardMaterial({flatShading:true,roughness:1}),tr.length),c=new T.Color();m.castShadow=m.receiveShadow=true;tr.forEach((t,i)=>{D.position.set(t[0],t[1]+dy*t[3],t[2]);D.scale.setScalar(t[3]);D.rotation.y=i;D.updateMatrix();m.setMatrixAt(i,D.matrix);c.setHSL(h+.04*Math.sin(i*7.1),s,.2+.06*Math.sin(i*3.3));m.setColorAt(i,c)});scene.add(m)}
+forest(new T.CylinderGeometry(.25,.4,2.4,6),1.2,.07,.4);forest(new T.ConeGeometry(1.9,4,8),3.6,.3,.5);forest(new T.ConeGeometry(1.4,3,8),5.8,.32,.55);
+{const N=70,m=new T.InstancedMesh(new T.IcosahedronGeometry(1,0),new T.MeshStandardMaterial({color:0x8a8780,flatShading:true,roughness:1}),N);m.castShadow=m.receiveShadow=true;for(let i=0;i<N;i++){let x,z;do{x=(rnd()-.5)*250;z=(rnd()-.5)*250}while(Math.hypot(x,z)<15||P.some(p=>Math.hypot(x-p.x,z-p.z)<12));const s=.5+rnd()*1.8;D.position.set(x,hf(x,z)+s*.3,z);D.scale.set(s,s*.7,s);D.rotation.set(rnd(),rnd()*6,0);D.updateMatrix();m.setMatrixAt(i,D.matrix)}scene.add(m)}
+const clouds=[];for(let i=0;i<12;i++){const g=new T.Group();for(let k=0;k<4;k++){const s=new T.Mesh(new T.SphereGeometry(6+rnd()*5,10,8),new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.88,fog:false}));s.position.set(k*8-12,rnd()*3,rnd()*5);s.scale.y=.45;g.add(s)}g.position.set((rnd()-.5)*400,75+rnd()*25,(rnd()-.5)*400);scene.add(g);clouds.push(g)}
+// ---------- MODEL YARDIMCILARI ----------
+const mat=c=>new T.MeshStandardMaterial({color:c,roughness:.85});
+function mesh(g,c,x,y,z,p){const m=new T.Mesh(g,mat(c));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;p&&p.add(m);return m}
+const bx=(w,h,d,c,x,y,z,p)=>mesh(new T.BoxGeometry(w,h,d),c,x,y,z,p),cy=(a,b,h,c,x,y,z,p,s=14)=>mesh(new T.CylinderGeometry(a,b,h,s),c,x,y,z,p),co=(r,h,c,x,y,z,p,s=14)=>mesh(new T.ConeGeometry(r,h,s),c,x,y,z,p),sp=(r,c,x,y,z,p)=>mesh(new T.SphereGeometry(r,14,10),c,x,y,z,p);
+function label(t,sz,c,bar){const k=document.createElement('canvas');k.width=512;k.height=128;const g=k.getContext('2d');if(bar){g.fillStyle='rgba(15,23,42,.7)';g.fillRect(0,18,512,92)}g.font='bold 60px system-ui';g.textAlign='center';g.fillStyle=c;g.fillText(t,256,88);const s=new T.Sprite(new T.SpriteMaterial({map:new T.CanvasTexture(k),transparent:true,fog:false}));s.scale.set(sz*4,sz,1);return s}
+const FT=(()=>{const c=document.createElement('canvas');c.width=300;c.height=200;const g=c.getContext('2d');g.fillStyle='#e30a17';g.fillRect(0,0,300,200);g.fillStyle='#fff';g.beginPath();g.arc(110,100,50,0,7);g.fill();g.fillStyle='#e30a17';g.beginPath();g.arc(124,100,40,0,7);g.fill();g.fillStyle='#fff';g.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5-Math.PI/2,r=i%2?9:20;g.lineTo(168+Math.cos(a)*r,100+Math.sin(a)*r)}g.fill();const t=new T.CanvasTexture(c);t.encoding=T.sRGBEncoding;return t})();
+const flags=[];
+function flag(x,z,p,h=9){const g=new T.Group();g.position.set(x,0,z);p.add(g);cy(.08,.1,h,0xd9d9d9,0,h/2,0,g,8);sp(.18,0xf5c518,0,h,0,g);const gm=new T.PlaneGeometry(3,2,14,6),m=new T.Mesh(gm,new T.MeshStandardMaterial({map:FT,side:2,roughness:.8}));m.position.set(1.6,h-1.3,0);m.castShadow=true;g.add(m);gm.userData.b=gm.attributes.position.array.slice();flags.push(gm)}
+function cannon(p,x,z,r){const g=new T.Group();g.position.set(x,0,z);g.rotation.y=r;p.add(g);cy(.3,.45,3.4,0x2b2b2b,0,1.45,0,g,12).rotation.x=Math.PI/2-.3;bx(1.2,.3,2.2,0x5b3a22,0,.9,0,g);for(const s of[-.8,.8])cy(.9,.9,.2,0x5b3a22,s,.9,0,g,16).rotation.z=Math.PI/2}
+function bags(p,cx,cz,r,a0,a1,n){for(let row=0;row<2;row++)for(let k=0;k<n;k++){const a=a0+(k+row*.5)*(a1-a0)/n,s=sp(.62,row?0x9c8b66:0xb5a27d,cx+Math.cos(a)*r,.3+row*.5,cz+Math.sin(a)*r,p);s.scale.set(1,.55,.7);s.rotation.y=-a}}
+function person(g,x,z,c){const q=new T.Group();q.position.set(x,0,z);g.add(q);cy(.28,.3,.9,0x1e293b,0,.45,0,q,8);cy(.36,.3,.9,c,0,1.3,0,q,8);sp(.26,0xf1c9a5,0,1.95,0,q);cy(.3,.3,.25,0x1e293b,0,2.25,0,q,10);const e=label('!',1.2,'#fde047');e.position.y=3.4;q.add(e);return e}
+const L={
+deniz(g){const w=cy(8,8,.1,0x2a7fb8,-9,.06,-3,g,32);w.material=new T.MeshStandardMaterial({color:0x2a7fb8,roughness:.15,metalness:.3});cy(1.4,2,11,0xf1f5f9,0,5.5,-6,g);cy(1.45,1.7,1.6,0xdc2626,0,7,-6,g);cy(1.3,1.3,1.4,0xfde68a,0,11.7,-6,g).material=new T.MeshStandardMaterial({color:0xfde68a,emissive:0xfbbf24,emissiveIntensity:1.2});co(1.7,1.8,0xdc2626,0,13.3,-6,g);bx(5,1,1.8,0x7c4a21,-8,.4,-3,g);bx(.15,5,.15,0x5b3a22,-8,3,-3,g);bx(2.4,3,.05,0xf8fafc,-6.8,3.5,-3,g)},
+amasya(g){co(11,22,0x8b8478,-4,11,-10,g,5);co(8,16,0x7a7468,8,8,-8,g,6);bx(9,5,6,0xe7d3a8,0,2.5,0,g);co(6.8,3,0x9a3412,0,6.5,0,g,4).rotation.y=Math.PI/4;bx(1.4,2.6,.1,0x5b3a22,0,1.3,3.02,g);for(const s of[-2.8,2.8])bx(1,1.2,.1,0x1e293b,s,3,3.02,g)},
+erzurum(g){bx(12,7,6,0xcdb184,0,3.5,0,g);bx(4,9,1.2,0xe0c89a,0,4.5,3.2,g);bx(2,4,.2,0x1e293b,0,2.5,3.85,g);for(const s of[-2.8,2.8]){cy(.55,.7,15,0xd8c29a,s,7.5,3.6,g,12);cy(.9,.9,.3,0xb89c6a,s,12,3.6,g,12);co(.8,2.4,0x14b8a6,s,16.2,3.6,g,12)}sp(3,0x14b8a6,0,7,-.5,g)},
+sivas(g){bx(12,8,6,0xb8a082,0,4,0,g);bx(4,9,1.2,0xd8c29a,0,4.5,3.2,g);bx(2,4,.2,0x1e293b,0,2.5,3.85,g);for(const s of[-4,4]){cy(1.3,1.3,12,0x2f8fb0,s,6,3.3,g,16);co(1.5,2.5,0x1e6b86,s,13.2,3.3,g,16)}sp(2.6,0x2f8fb0,0,8,-.5,g)},
+meclis(g){bx(10,5,6,0xd6c6a5,0,2.5,0,g);const r=new T.CylinderGeometry(3.6,3.6,10.4,3);r.rotateY(Math.PI/2);const m=mesh(r,0x9a3412,0,5.1,0,g);m.rotation.z=Math.PI/2;bx(1.6,2.6,.1,0x5b3a22,0,1.3,3.02,g);for(const s of[-3.4,-1.8,1.8,3.4])bx(.9,1.2,.1,0x1e293b,s,3,3.02,g);flag(6,3,g,10)},
+sakarya(g){co(14,10,0x6b7d3a,6,5,-12,g,10);cannon(g,-3,2,0);cannon(g,3,3,.2);bags(g,0,4,7,-.6,.6,9);co(2.5,3.2,0x5f6b4a,6,1.6,3,g,6)}};
+const marks=[],H=new T.Group();scene.add(H);
+P.forEach(p=>{const g=new T.Group();g.position.set(p.x,0,p.z);g.rotation.y=Math.atan2(-p.x,-p.z);scene.add(g);L[p.t](g);const e=person(g,6,7,0x7f1d1d);p.mk=e;const l=label(p.n,2.4,'#fde68a',1);l.position.y=18;g.add(l);
+p.bc=new T.Mesh(new T.CylinderGeometry(.7,.7,70,16,1,true),new T.MeshBasicMaterial({color:0xfbbf24,transparent:true,opacity:.2,blending:T.AdditiveBlending,depthWrite:false,side:2,fog:false}));p.bc.position.set(p.x,35,p.z);scene.add(p.bc)});
+// ---------- KARARGÂH ----------
+cy(3.4,3.4,2.2,0x6b7a58,0,1.1,0,H,14);co(4,2.8,0x56634a,0,3.6,0,H,14);bx(1.5,1.9,.1,0x2b3324,0,.95,3.42,H);
+const hl=label('Millî Mücadele Karargâhı',1.7,'#fff',1);hl.position.y=8;H.add(hl);
+bx(2.4,.1,1.3,0x6b4a2b,-5,1,4.5,H);for(const a of[-1,1])for(const b of[-.5,.5])bx(.1,1,.1,0x4b3320,-5+a*1.1,.5,4.5+b*.5,H);const mp=new T.Mesh(new T.PlaneGeometry(1.6,.9),new T.MeshStandardMaterial({color:0xe9dcb8}));mp.rotation.x=-Math.PI/2;mp.position.set(-5,1.07,4.5);H.add(mp);
+for(let i=0;i<7;i++){const a=i*.9;sp(.28,0x78716c,6+Math.cos(a)*.9,.2,5+Math.sin(a)*.9,H)}const fl=co(.4,1.2,0xfb923c,6,.8,5,H,8);fl.material=new T.MeshStandardMaterial({color:0xfb923c,emissive:0xff6a00,emissiveIntensity:2});const fire=new T.PointLight(0xff8a3c,1.4,16);fire.position.set(6,1.5,5);H.add(fire);
+const U=[0,1,2,3,4,5].map(()=>{const g=new T.Group();g.visible=false;g.scale.setScalar(.001);H.add(g);return g});
+flag(-6,1,U[0],10);
+cy(.12,.15,9,0x5b3a22,8,4.5,-5,U[1],6);bx(3,.12,.12,0x5b3a22,8,8.2,-5,U[1]);bx(2,.12,.12,0x5b3a22,8,7.4,-5,U[1]);
+[[7,.55,-2],[8.4,.55,-2],[7.7,1.65,-2],[7,.55,-3.5]].forEach(a=>bx(1.3,1.1,1.3,0x8a5a2b,a[0],a[1],a[2],U[2]));[[6,-4],[7.4,-5],[9,-4.2]].forEach(a=>sp(.7,0xc9b98a,a[0],.45,a[1],U[2]).scale.set(1,.7,.8));cy(.5,.5,1.2,0x7c3f1d,9,.6,-2.5,U[2],10);
+cy(2.4,2.4,1.6,0xa39577,-9,.8,-7,U[3]);co(2.9,2,0x8f8264,-9,2.6,-7,U[3]);flag(-12,-4,U[3],6);
+bx(2.6,.8,2.6,0xd6d3d1,0,.4,-9,U[4]);cy(.6,.9,6,0xe7e5e4,0,3.8,-9,U[4],4);{const t=new T.Mesh(new T.TorusGeometry(.9,.2,8,24,Math.PI*1.6),new T.MeshStandardMaterial({color:0xfbbf24,metalness:.6,roughness:.3}));t.position.set(0,7.6,-9);t.rotation.z=1.2;U[4].add(t);sp(.22,0xfbbf24,.2,7.6,-9,U[4])}
+bags(U[5],0,0,8.5,Math.PI/2-.95,Math.PI/2+.95,12);cannon(U[5],-3,5.5,0);cannon(U[5],3,5.5,0);
+// ---------- BELGELER ----------
+const S=[];F.forEach((f,i)=>{let x,z;do{const a=rnd()*6.28,r=18+rnd()*85;x=Math.cos(a)*r;z=Math.sin(a)*r}while(P.some(p=>Math.hypot(x-p.x,z-p.z)<10)||hf(x,z)>8||pd(x,z)<2);const g=new T.Group(),m=new T.MeshStandardMaterial({color:0xf5e6b8,emissive:0x886600,emissiveIntensity:.7});const c=new T.Mesh(new T.CylinderGeometry(.22,.22,1,10),m);c.rotation.z=Math.PI/2;g.add(c);const h=new T.Mesh(new T.TorusGeometry(.8,.04,6,24),new T.MeshBasicMaterial({color:0xfde047}));g.add(h);g.position.set(x,hf(x,z)+1.2,z);scene.add(g);S.push({g,h,f,x,z,y:g.position.y,got:0})});
+// ---------- OYUN DURUMU ----------
+let score=0,got=0,busy=0,started=0,yaw=0,pitch=0,tt=0,AC,tgt=null;const pops=[],joy={x:0,y:0},K={};
+cam.position.set(0,hf(0,14)+1.7,14);
+function beep(ok){if(!AC)return;(ok?[523,659,784]:[220,170]).forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain(),s=AC.currentTime+i*.1;o.type=ok?'triangle':'sawtooth';o.frequency.value=f;g.gain.setValueAtTime(.12,s);g.gain.exponentialRampToValueAtTime(.001,s+.18);o.connect(g);g.connect(AC.destination);o.start(s);o.stop(s+.2)})}
+let tto;function toast(h){const t=$('t');t.innerHTML=h;t.style.opacity=1;clearTimeout(tto);tto=setTimeout(()=>t.style.opacity=0,4200)}
+function pts(n){score+=n;hud()}
+function hud(){$('ql').innerHTML=P.map(p=>`<div style="opacity:${p.done?.55:1}">${p.done?'✅':'⭕'} ${p.n} <small>(${p.d})</small></div>`).join('');$('sc').innerHTML=`⭐ ${score} puan<br>🎖️ ${RANK[Math.min(6,Math.floor(score/220))]}<br>📜 Belge: ${got}/${F.length}`;const nx=P.find(p=>!p.done);P.forEach(p=>{p.bc.visible=!p.done;p.bc.material.opacity=p===nx?.38:.12;p.mk.visible=!p.done})}
+let cb;const M=$('m'),C=$('c');
+function show(h,f){C.innerHTML=h;cb=f;M.style.display='flex';busy=1}
+function hide(){M.style.display='none';busy=0}
+C.onclick=e=>{const b=e.target.closest('[data-k]');if(b&&cb)cb(b.dataset.k,b)};
+function quest(p){let i=0,t=0;
+show(`<div class=h>📍 ${p.n} · ${p.d}</div><p><b>🎖️ ${p.w}:</b> “${p.i}”</p><button class=b data-k=go>Göreve Başla</button><button class="b s" data-k=x>Vazgeç</button>`,k=>k=='x'?hide():ask());
+function ask(){const q=p.q[i],o=q.slice(1,5).map((s,j)=>[s,!j]).sort(()=>rnd()-.5);t=0;
+show(`<div class=h>Soru ${i+1}/${p.q.length}</div><p class=q>${q[0]}</p>`+o.map((a,j)=>`<button class=o data-k=${j}>${'ABCD'[j]}) ${a[0]}</button>`).join('')+'<div id=fb></div>',(k,b)=>{
+if(b.disabled)return;
+if(o[k][1]){b.classList.add('ok');C.querySelectorAll('.o').forEach(x=>x.disabled=true);pts(t?50:100);beep(1);$('fb').innerHTML=`<p class=ex>✅ <b>Doğru!</b> ${q[5]}</p><button class=b data-k=n>${i+1<p.q.length?'Sonraki Soru ➜':'Görevi Tamamla 🏁'}</button>`;cb=k2=>k2=='n'&&(++i<p.q.length?ask():finish(p))}
+else{t++;b.classList.add('no');b.disabled=true;beep(0);$('fb').innerHTML='<p class=ex>❌ Yanlış. Tarih bilgini gözden geçir ve başka bir seçenek dene!</p>'}})}}
+function finish(p){p.done=1;const i=P.indexOf(p);U[i].visible=true;pops.push([U[i],0]);hud();
+if(P.every(x=>x.done)){show(`<div style="text-align:center"><div style="font-size:54px">🏆</div><div class=h>ZAFER! Karargâh Tamamlandı</div><p>Tüm görevleri bitirdin ve Millî Mücadele’nin 6 önemli durağını öğrendin.</p><p class=ex><b>⭐ ${score} puan · 🎖️ ${RANK[Math.min(6,Math.floor(score/220))]}</b><br>📜 ${got}/${F.length} belge</p><button class=b data-k=ok>Karargâhı Gez</button></div>`,hide);return}
+show(`<div style="text-align:center"><div style="font-size:48px">🎉</div><div class=h>Görev Tamamlandı!</div><p><b>${p.n}</b> görevini bitirdin.<br>Karargâhına <b>${p.u}</b> eklendi!</p><button class=b data-k=ok>Devam Et</button></div>`,hide)}
+function hubInfo(){show(`<div class=h>🏕️ Karargâh Durumu</div>`+P.map(p=>`<div class=ex style="margin:6px 0">${p.done?'✅':'🔒'} <b>${p.u}</b> <small>— ${p.n} görevi</small></div>`).join('')+`<p style="font-size:13px">📜 Bulunan belgeler: ${got}/${F.length}. Görevleri kronolojik sırayla izlersen tarihi daha kolay öğrenirsin!</p><button class=b data-k=ok>Kapat</button>`,hide)}
+function act(){if(busy||!tgt)return;tgt===H?hubInfo():!tgt.done&&quest(tgt)}
+// ---------- KONTROLLER ----------
+onkeydown=e=>{K[e.code]=1;if(e.code=='KeyE'&&started)act()};onkeyup=e=>K[e.code]=0;
+{const cv=R.domElement;let id=null,lx=0,ly=0;cv.onpointerdown=e=>{id=e.pointerId;lx=e.clientX;ly=e.clientY};cv.onpointermove=e=>{if(id!==e.pointerId||busy)return;yaw-=(e.clientX-lx)*.005;pitch=Math.max(-1.2,Math.min(1.2,pitch-(e.clientY-ly)*.005));lx=e.clientX;ly=e.clientY};cv.onpointerup=cv.onpointercancel=()=>id=null}
+if(window.nipplejs){const j=nipplejs.create({zone:$('joy'),mode:'static',position:{left:'50%',top:'50%'},color:'white',size:120});j.on('move',(e,d)=>{joy.x=d.vector.x;joy.y=d.vector.y});j.on('end',()=>joy.x=joy.y=0)}
+$('go').onclick=()=>{$('intro').style.display='none';started=1;try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}toast('🧭 Altın ışık hüzmelerini takip et! Yolda 📜 belgeler topla.')};
+onresize=()=>{R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()};
+// ---------- DÖNGÜ ----------
+const OB=[[0,0,5],...P.map(p=>[p.x,p.z,7])];
+function move(dt){let f=(K.KeyW||K.ArrowUp?1:0)-(K.KeyS||K.ArrowDown?1:0)+joy.y,r=(K.KeyD?1:0)-(K.KeyA?1:0)+joy.x;if(K.ArrowLeft)yaw+=dt*1.8;if(K.ArrowRight)yaw-=dt*1.8;const l=Math.hypot(f,r);if(l>1){f/=l;r/=l}const s=(K.ShiftLeft||K.ShiftRight?10:6)*dt,p=cam.position;
+p.x+=(-Math.sin(yaw)*f+Math.cos(yaw)*r)*s;p.z+=(-Math.cos(yaw)*f-Math.sin(yaw)*r)*s;
+for(const o of OB){const dx=p.x-o[0],dz=p.z-o[1],d=Math.hypot(dx,dz);if(d<o[2]){p.x=o[0]+dx/d*o[2];p.z=o[1]+dz/d*o[2]}}
+const d=Math.hypot(p.x,p.z);if(d>125){p.x*=125/d;p.z*=125/d}
+p.y+=(hf(p.x,p.z)+1.7+Math.sin(tt*9)*.05*Math.min(1,l)-p.y)*Math.min(1,dt*12)}
+const mm=$('mm').getContext('2d');
+function mini(){mm.clearRect(0,0,120,120);const X=x=>60+x*.42,Z=z=>60+z*.42;mm.strokeStyle='#a16207';mm.lineWidth=2;P.forEach(p=>{mm.beginPath();mm.moveTo(60,60);mm.lineTo(X(p.x),Z(p.z));mm.stroke()});mm.fillStyle='#ef4444';mm.fillRect(56,56,8,8);P.forEach(p=>{mm.fillStyle=p.done?'#22c55e':'#fbbf24';mm.beginPath();mm.arc(X(p.x),Z(p.z),5,0,7);mm.fill()});mm.fillStyle='#fff';S.forEach(s=>{if(!s.got)mm.fillRect(X(s.x)-1,Z(s.z)-1,3,3)});const p=cam.position;mm.save();mm.translate(X(p.x),Z(p.z));mm.rotate(-yaw);mm.fillStyle='#38bdf8';mm.beginPath();mm.moveTo(0,-6);mm.lineTo(4,4);mm.lineTo(-4,4);mm.fill();mm.restore()}
+let last=performance.now(),lq=0;
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-last)/1e3);last=now;tt+=dt;
+if(started&&!busy)move(dt);cam.rotation.set(pitch,yaw,0);const p=cam.position;
+sky.position.copy(p);sun.position.set(p.x+60,120,p.z+35);sun.target.position.copy(p);
+flags.forEach(g=>{const a=g.attributes.position.array,b=g.userData.b;for(let i=0;i<a.length;i+=3)a[i+2]=Math.sin(b[i]*2.2-tt*4)*.2*(b[i]+1.5)/3;g.attributes.position.needsUpdate=true});
+fire.intensity=1.2+Math.sin(tt*20)*.3+Math.random()*.3;
+clouds.forEach(c=>{c.position.x+=dt*1.2;if(c.position.x>250)c.position.x=-250});
+P.forEach((q,i)=>{q.mk.position.y=3.4+Math.sin(tt*2+i)*.25;q.bc.rotation.y=tt});
+S.forEach(s=>{if(s.got)return;s.g.rotation.y=tt*1.5;s.g.position.y=s.y+Math.sin(tt*2+s.x)*.2;s.h.rotation.x=tt*2;if(started&&Math.hypot(p.x-s.x,p.z-s.z)<2.6){s.got=1;s.g.visible=false;got++;pts(25);beep(1);toast('📜 <b>Tarihî Belge Bulundu! +25</b><br>'+s.f);if(got==F.length)toast('📜 Tüm belgeleri topladın! Harikasın!')}});
+for(let i=pops.length-1;i>=0;i--){const q=pops[i];q[1]+=dt*1.4;const t=Math.min(q[1],1)-1,s=1+2.7*t*t*t+1.7*t*t;q[0].scale.setScalar(Math.max(.001,s));if(q[1]>=1)pops.splice(i,1)}
+if((lq+=dt)>.15){lq=0;mini();tgt=null;const dh=Math.hypot(p.x,p.z);if(dh<11)tgt=H;for(const q of P)if(Math.hypot(p.x-q.x,p.z-q.z)<13)tgt=q;
+const b=$('act'),nx=P.find(q=>!q.done);b.style.display=started&&!busy&&tgt&&(tgt===H||!tgt.done)?'block':'none';if(tgt)b.textContent=tgt===H?'🏕️ Karargâh Durumu (E)':`🎯 ${tgt.n} Görevini Başlat (E)`;
+$('nx').textContent=nx?`🧭 Sıradaki: ${nx.n} · ${Math.round(Math.hypot(p.x-nx.x,p.z-nx.z))} m`:'🏆 Tüm görevler tamam!'}
+R.render(scene,cam)}
+hud();requestAnimationFrame(loop);
+</script></body></html>
